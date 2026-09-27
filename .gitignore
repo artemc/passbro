@@ -1,0 +1,8 @@
+*.kdbx
+__pycache__/
+/dist/
+/build/
+/agents/
+/AGENTS.md
+/.claude/
+/docs/Screenshot *

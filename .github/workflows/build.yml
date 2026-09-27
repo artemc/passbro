@@ -1,0 +1,38 @@
+name: build
+
+# Manual only: Actions -> build -> Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Publish GitHub release v<version> with passbro.pyz"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-pykeepass
+      - name: Test
+        run: make test PYTHON=/usr/bin/python3
+      - name: Build
+        run: make build PYTHON=/usr/bin/python3
+      - name: Smoke test
+        run: /usr/bin/python3 dist/passbro.pyz --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: passbro.pyz
+          path: dist/passbro.pyz
+      - name: Release
+        if: inputs.release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(/usr/bin/python3 -c 'import passbro; print(passbro.__version__)')
+          gh release create "v$version" dist/passbro.pyz --target "$GITHUB_SHA" --title "passbro $version" --generate-notes
